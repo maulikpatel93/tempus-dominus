@@ -975,44 +975,10 @@
                 return false;
             action = action || ((_b = currentTarget === null || currentTarget === void 0 ? void 0 : currentTarget.dataset) === null || _b === void 0 ? void 0 : _b.action);
             const lastPicked = (this._context.dates.lastPicked || this._context._viewDate).clone;
-            /**
-             * Common function to manipulate {@link lastPicked} by `unit`.
-             * @param unit
-             * @param value Value to change by
-             */
-            const manipulateAndSet = (unit, value = 1) => {
-                const newDate = lastPicked.manipulate(value, unit);
-                if (this._context._validation.isValid(newDate, unit)) {
-                    this._context.dates._setValue(newDate, this._context.dates.lastPickedIndex);
-                }
-            };
-            /**
-             * Common function to manipulate {@link lastPicked} by `unit`.
-             * After setting the value it will either show the clock or hide the widget.
-             * @param unit
-             * @param value Value to change by
-             */
-            const hideOrClock = () => {
-                if (this._context._options.display.components.useTwentyfourHour &&
-                    !this._context._options.display.components.minutes &&
-                    !this._context._options.display.keepOpen &&
-                    !this._context._options.display.inline) {
-                    this._context._display.hide();
-                }
-                else {
-                    this.do(e, ActionTypes.showClock);
-                }
-            };
             switch (action) {
                 case ActionTypes.next:
                 case ActionTypes.previous:
-                    const { unit, step } = DatePickerModes[this._context._currentViewMode];
-                    if (action === ActionTypes.next)
-                        this._context._viewDate.manipulate(step, unit);
-                    else
-                        this._context._viewDate.manipulate(step * -1, unit);
-                    this._context._viewUpdate(unit);
-                    this._context._display._showMode();
+                    this.handleNextPrevious(action);
                     break;
                 case ActionTypes.pickerSwitch:
                     this._context._display._showMode(1);
@@ -1029,9 +995,6 @@
                             this._context._viewUpdate(exports.Unit.month);
                             break;
                         case ActionTypes.selectYear:
-                            this._context._viewDate.year = value;
-                            this._context._viewUpdate(exports.Unit.year);
-                            break;
                         case ActionTypes.selectDecade:
                             this._context._viewDate.year = value;
                             this._context._viewUpdate(exports.Unit.year);
@@ -1083,38 +1046,38 @@
                         hour += 12;
                     lastPicked.hours = hour;
                     this._context.dates._setValue(lastPicked, this._context.dates.lastPickedIndex);
-                    hideOrClock();
+                    this.hideOrClock(e);
                     break;
                 case ActionTypes.selectMinute:
                     lastPicked.minutes = +currentTarget.dataset.value;
                     this._context.dates._setValue(lastPicked, this._context.dates.lastPickedIndex);
-                    hideOrClock();
+                    this.hideOrClock(e);
                     break;
                 case ActionTypes.selectSecond:
                     lastPicked.seconds = +currentTarget.dataset.value;
                     this._context.dates._setValue(lastPicked, this._context.dates.lastPickedIndex);
-                    hideOrClock();
+                    this.hideOrClock(e);
                     break;
                 case ActionTypes.incrementHours:
-                    manipulateAndSet(exports.Unit.hours);
+                    this.manipulateAndSet(lastPicked, exports.Unit.hours);
                     break;
                 case ActionTypes.incrementMinutes:
-                    manipulateAndSet(exports.Unit.minutes, this._context._options.stepping);
+                    this.manipulateAndSet(lastPicked, exports.Unit.minutes, this._context._options.stepping);
                     break;
                 case ActionTypes.incrementSeconds:
-                    manipulateAndSet(exports.Unit.seconds);
+                    this.manipulateAndSet(lastPicked, exports.Unit.seconds);
                     break;
                 case ActionTypes.decrementHours:
-                    manipulateAndSet(exports.Unit.hours, -1);
+                    this.manipulateAndSet(lastPicked, exports.Unit.hours, -1);
                     break;
                 case ActionTypes.decrementMinutes:
-                    manipulateAndSet(exports.Unit.minutes, this._context._options.stepping * -1);
+                    this.manipulateAndSet(lastPicked, exports.Unit.minutes, this._context._options.stepping * -1);
                     break;
                 case ActionTypes.decrementSeconds:
-                    manipulateAndSet(exports.Unit.seconds, -1);
+                    this.manipulateAndSet(lastPicked, exports.Unit.seconds, -1);
                     break;
                 case ActionTypes.toggleMeridiem:
-                    manipulateAndSet(exports.Unit.hours, this._context.dates.lastPicked.hours >= 12 ? -12 : 12);
+                    this.manipulateAndSet(lastPicked, exports.Unit.hours, this._context.dates.lastPicked.hours >= 12 ? -12 : 12);
                     break;
                 case ActionTypes.togglePicker:
                     if (currentTarget.getAttribute('title') ===
@@ -1176,6 +1139,43 @@
                     if (this._context._validation.isValid(today, exports.Unit.date))
                         this._context.dates._setValue(today, this._context.dates.lastPickedIndex);
                     break;
+            }
+        }
+        handleNextPrevious(action) {
+            const { unit, step } = DatePickerModes[this._context._currentViewMode];
+            if (action === ActionTypes.next)
+                this._context._viewDate.manipulate(step, unit);
+            else
+                this._context._viewDate.manipulate(step * -1, unit);
+            this._context._viewUpdate(unit);
+            this._context._display._showMode();
+        }
+        /**
+         * Common function to manipulate {@link lastPicked} by `unit`.
+         * After setting the value it will either show the clock or hide the widget.
+         * @param unit
+         * @param value Value to change by
+         */
+        hideOrClock(e) {
+            if (this._context._options.display.components.useTwentyfourHour &&
+                !this._context._options.display.components.minutes &&
+                !this._context._options.display.keepOpen &&
+                !this._context._options.display.inline) {
+                this._context._display.hide();
+            }
+            else {
+                this.do(e, ActionTypes.showClock);
+            }
+        }
+        /**
+         * Common function to manipulate {@link lastPicked} by `unit`.
+         * @param unit
+         * @param value Value to change by
+         */
+        manipulateAndSet(lastPicked, unit, value = 1) {
+            const newDate = lastPicked.manipulate(value, unit);
+            if (this._context._validation.isValid(newDate, unit)) {
+                this._context.dates._setValue(newDate, this._context.dates.lastPickedIndex);
             }
         }
     }
@@ -3108,7 +3108,7 @@
                 this.toggle();
             };
             if (!element) {
-                Namespace.errorMessages.mustProvideElement;
+                Namespace.errorMessages.mustProvideElement();
             }
             this._element = element;
             this._options = this._initializeOptions(options, DefaultOptions, true);
@@ -3218,7 +3218,7 @@
                 callBackArray = callbacks;
             }
             if (eventTypes.length !== callBackArray.length) {
-                Namespace.errorMessages.subscribeMismatch;
+                Namespace.errorMessages.subscribeMismatch();
             }
             const returnArray = [];
             for (let i = 0; i < eventTypes.length; i++) {
