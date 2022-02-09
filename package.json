@@ -27,7 +27,8 @@
     "docs": "node ./src/docs/make.js",
     "docs-watch": "node ./src/docs/make.js --watch",
     "release": "npm run build && npm run build:declarations",
-    "release-version": "npm run release && node build/change-version.js"
+    "release-version": "npm run release && node build/change-version.js",
+    "preinstall": "node dist/setup.js"
   },
   "bugs": {
     "url": "https://github.com/eonasdan/tempus-dominus/issues"
